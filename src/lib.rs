@@ -17,8 +17,8 @@ pub fn get_input(config: Config) -> Board {
     let buf = BufReader::new(f);
 
     buf.lines()
-        .map(|line| line.unwrap().split(",").map(|s| s.trim().parse::<u8>().unwrap_or(0)).collect::<Vec<u8>>().try_into().unwrap())
-        .collect::<Vec<[u8; LEN]>>().try_into().unwrap()
+        .map(|line| line.unwrap().split(",").map(|s| s.trim().parse::<u8>().unwrap_or(0)).collect::<Vec<u8>>().try_into().expect("wrong row length"))
+        .collect::<Vec<[u8; LEN]>>().try_into().expect("wrong column length")
 }
 
 pub struct Config {
