@@ -43,7 +43,7 @@ fn possibles(board: &Board) -> (Vec<Vec<Vec<u8>>>, Vec<(usize, usize)>) {
     let mut possible_row: [[bool; 9]; 9] = [[true; 9]; 9];
     // possible_column[i in 0~8]
     let mut possible_column: [[bool; 9]; 9] = [[true; 9]; 9];
-    let mut remain_index: Vec<(usize, usize)> = Vec::new();
+    let mut remain_index: Vec<(usize, usize)> = Vec::with_capacity(9);
 
     for i in 0..9 {
         for j in 0..9 {
@@ -60,7 +60,7 @@ fn possibles(board: &Board) -> (Vec<Vec<Vec<u8>>>, Vec<(usize, usize)>) {
         }
     }
 
-    let mut possibles: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); 9]; 9];
+    let mut possibles: Vec<Vec<Vec<u8>>> = vec![vec![Vec::with_capacity(9); 9]; 9];
     for &(i, j) in remain_index.iter() {
         for k in 0..9 {
             if possible_block[(i/3)*3+j/3][k]
@@ -76,12 +76,21 @@ fn possibles(board: &Board) -> (Vec<Vec<Vec<u8>>>, Vec<(usize, usize)>) {
 pub fn solve(board: &mut Board) -> &mut Board {
     let (mut possibles, mut remain_index) = possibles(&board);
 
-    for &(i, j) in remain_index.iter() {
-        if let &[k] = possibles[i][j].as_slice() {
-            board[i][j] = k.try_into().unwrap();
+    // while !remain_index.is_empty() {
+        remain_index.sort_by(|a, b| possibles[b.0][b.1].len().cmp(&possibles[a.0][a.1].len()));
+        println!("{:?}", possibles);
+        println!("{:?}", remain_index);
+        // split remain_index to remain_index (len > 1), one_index (len == 1)
+        let idx = remain_index.partition_point(|n| possibles[n.0][n.1].len() != 1);
+        let one_index = remain_index.split_off(idx);
+        // update determined numbers
+        for &(i, j) in one_index.iter() {
+            board[i][j] = possibles[i][j].pop().unwrap();
             println!("changed {} {}", i, j);
         }
-    }
-    println!("{:?}", possibles);
+
+
+        println!("{:?}", remain_index);
+
     board
 }
