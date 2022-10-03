@@ -11,12 +11,12 @@ fn main() {
         process::exit(1);
     });
 
-    let input = get_input(config);
+    let mut input = get_input(config);
 
     println!("init:");
     print_board(input);
 
-    let solved = solve(input);
+    let solved = solve(&mut input);
     println!("solved:");
-    print_board(solved)
+    print_board(*solved);
 }
