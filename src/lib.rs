@@ -3,6 +3,21 @@ use std::{
     io::{prelude::*, BufReader},
 };
 
+pub struct Config {
+    pub filename: String,
+}
+
+impl Config {
+    pub fn new(args: &[String]) -> Result<Config, &'static str> {
+        if args.len() < 2 {
+            return Err("please enter filename");
+        }
+
+        let filename = args[1].clone();
+        Ok(Config { filename })
+    }
+}
+
 pub type Board = [[u8; 9]; 9];
 pub fn print_board(board: Board) {
     for line in board.iter() {
@@ -10,8 +25,8 @@ pub fn print_board(board: Board) {
     }
 }
 
-pub fn get_input(config: &Config) -> Board {
-    let f = fs::File::open(config.filename.clone()).expect("file not found");
+pub fn get_input(config: Config) -> Board {
+    let f = fs::File::open(config.filename).expect("file not found");
     let buf = BufReader::new(f);
 
     buf.lines()
@@ -28,29 +43,9 @@ pub fn get_input(config: &Config) -> Board {
         .expect("wrong column length")
 }
 
-pub struct Config {
-    filename: String,
-    print_opt: bool,
-}
-
-impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 2 {
-            return Err("please enter filename");
-        }
-
-        let filename = args[1].clone();
-        let print_opt = false;
-        Ok(Config {
-            filename,
-            print_opt,
-        })
-    }
-}
-
-pub fn solve(board: &mut Board, config: &Config) -> bool {
+pub fn solve(board: &mut Board) -> bool {
     let (mut possibles, mut remain_index) = possibles(board);
-    solve2(board, &mut possibles, &mut remain_index, config)
+    solve2(board, &mut possibles, &mut remain_index)
 }
 
 type Possibles = Vec<Vec<Vec<u8>>>;
@@ -92,12 +87,7 @@ fn possibles(board: &Board) -> (Possibles, RemainIndex) {
     (possibles, remain_index)
 }
 
-fn solve2(
-    board: &mut Board,
-    possibles: &mut Possibles,
-    remain_index: &mut RemainIndex,
-    config: &Config,
-) -> bool {
+fn solve2(board: &mut Board, possibles: &mut Possibles, remain_index: &mut RemainIndex) -> bool {
     remain_index.sort_by(|a, b| possibles[b.0][b.1].len().cmp(&possibles[a.0][a.1].len()));
 
     // split remain_index to remain_index (len > 1), one_index (len == 1 or 0)
@@ -110,10 +100,6 @@ fn solve2(
             None => return false,
             Some(n) => {
                 board[i][j] = n;
-                if config.print_opt {
-                    println!("changed: {} at ({}, {})", n, i, j);
-                    print_board(*board);
-                }
 
                 for k in 0..9 {
                     possibles[k][j].retain(|&v| v != n);
@@ -134,9 +120,6 @@ fn solve2(
                 let mut possibles2 = possibles.clone();
                 let mut remain_index2 = remain_index.clone();
                 board2[last.0][last.1] = kari;
-                if config.print_opt {
-                    println!("kari-oki {:?} at {:?}", kari, last);
-                };
 
                 // update possibles
                 for i in 0..9 {
@@ -146,12 +129,9 @@ fn solve2(
                         .retain(|&v| v != kari);
                 }
 
-                if solve2(&mut board2, &mut possibles2, &mut remain_index2, config) {
+                if solve2(&mut board2, &mut possibles2, &mut remain_index2) {
                     *board = board2;
                     return true;
-                };
-                if config.print_opt {
-                    println!("kari-oki failed: {:?} at {:?}", kari, last);
                 };
             }
         }
