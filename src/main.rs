@@ -1,8 +1,5 @@
+use std::{env, process};
 use sudoku_rs::*;
-use std::{
-    env,
-    process,
-};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -16,8 +13,7 @@ fn main() {
     println!("init:");
     print_board(board);
 
-    let (mut possibles, mut remain_index) = possibles(&board);
-    if solve(&mut board, &mut possibles, &mut remain_index) {
+    if solve(&mut board) {
         println!("solved:");
         print_board(board);
     } else {
