@@ -8,12 +8,12 @@ fn main() {
         process::exit(1);
     });
 
-    let mut board = get_input(config);
+    let mut board = get_input(&config);
 
     println!("init:");
     print_board(board);
 
-    if solve(&mut board) {
+    if solve(&mut board, &config) {
         println!("solved:");
         print_board(board);
     } else {

@@ -10,8 +10,8 @@ pub fn print_board(board: Board) {
     }
 }
 
-pub fn get_input(config: Config) -> Board {
-    let f = fs::File::open(config.filename).expect("file not found");
+pub fn get_input(config: &Config) -> Board {
+    let f = fs::File::open(config.filename.clone()).expect("file not found");
     let buf = BufReader::new(f);
 
     buf.lines()
@@ -30,6 +30,7 @@ pub fn get_input(config: Config) -> Board {
 
 pub struct Config {
     filename: String,
+    print_opt: bool,
 }
 
 impl Config {
@@ -39,19 +40,23 @@ impl Config {
         }
 
         let filename = args[1].clone();
-        Ok(Config { filename })
+        let print_opt = false;
+        Ok(Config {
+            filename,
+            print_opt,
+        })
     }
 }
 
-pub fn solve(board: &mut Board) -> bool {
+pub fn solve(board: &mut Board, config: &Config) -> bool {
     let (mut possibles, mut remain_index) = possibles(board);
-    solve2(board, &mut possibles, &mut remain_index)
+    solve2(board, &mut possibles, &mut remain_index, config)
 }
 
 type Possibles = Vec<Vec<Vec<u8>>>;
 type RemainIndex = Vec<(usize, usize)>;
 
-pub fn possibles(board: &Board) -> (Possibles, RemainIndex) {
+fn possibles(board: &Board) -> (Possibles, RemainIndex) {
     // possible_block[i in 0~8]: (i//3)*3~(i//3)*3+2, (i%3)*3~(i%3)*3+2
     let mut possible_block: [[bool; 9]; 9] = [[true; 9]; 9];
     // possible_row[i in 0~8]
@@ -87,7 +92,12 @@ pub fn possibles(board: &Board) -> (Possibles, RemainIndex) {
     (possibles, remain_index)
 }
 
-fn solve2(board: &mut Board, possibles: &mut Possibles, remain_index: &mut RemainIndex) -> bool {
+fn solve2(
+    board: &mut Board,
+    possibles: &mut Possibles,
+    remain_index: &mut RemainIndex,
+    config: &Config,
+) -> bool {
     remain_index.sort_by(|a, b| possibles[b.0][b.1].len().cmp(&possibles[a.0][a.1].len()));
 
     // split remain_index to remain_index (len > 1), one_index (len == 1 or 0)
@@ -100,8 +110,10 @@ fn solve2(board: &mut Board, possibles: &mut Possibles, remain_index: &mut Remai
             None => return false,
             Some(n) => {
                 board[i][j] = n;
-                println!("changed: {} at ({}, {})", n, i, j);
-                print_board(*board);
+                if config.print_opt {
+                    println!("changed: {} at ({}, {})", n, i, j);
+                    print_board(*board);
+                }
 
                 for k in 0..9 {
                     possibles[k][j].retain(|&v| v != n);
@@ -122,7 +134,9 @@ fn solve2(board: &mut Board, possibles: &mut Possibles, remain_index: &mut Remai
                 let mut possibles2 = possibles.clone();
                 let mut remain_index2 = remain_index.clone();
                 board2[last.0][last.1] = kari;
-                println!("kari-oki {:?} at {:?}", kari, last);
+                if config.print_opt {
+                    println!("kari-oki {:?} at {:?}", kari, last);
+                };
 
                 // update possibles
                 for i in 0..9 {
@@ -132,11 +146,13 @@ fn solve2(board: &mut Board, possibles: &mut Possibles, remain_index: &mut Remai
                         .retain(|&v| v != kari);
                 }
 
-                if solve2(&mut board2, &mut possibles2, &mut remain_index2) {
+                if solve2(&mut board2, &mut possibles2, &mut remain_index2, config) {
                     *board = board2;
                     return true;
                 };
-                println!("kari-oki failed: {:?} at {:?}", kari, last);
+                if config.print_opt {
+                    println!("kari-oki failed: {:?} at {:?}", kari, last);
+                };
             }
         }
     };
