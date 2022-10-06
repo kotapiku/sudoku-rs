@@ -36,7 +36,7 @@ impl Config {
     }
 }
 
-fn possibles(board: &Board) -> (Vec<Vec<Vec<u8>>>, Vec<(usize, usize)>) {
+pub fn possibles(board: &Board) -> (Vec<Vec<Vec<u8>>>, Vec<(usize, usize)>) {
     // possible_block[i in 0~8]: (i//3)*3~(i//3)*3+2, (i%3)*3~(i%3)*3+2
     let mut possible_block: [[bool; 9]; 9] = [[true; 9]; 9];
     // possible_row[i in 0~8]
@@ -73,24 +73,58 @@ fn possibles(board: &Board) -> (Vec<Vec<Vec<u8>>>, Vec<(usize, usize)>) {
     (possibles, remain_index)
 }
 
-pub fn solve(board: &mut Board) -> &mut Board {
-    let (mut possibles, mut remain_index) = possibles(&board);
+pub fn solve(board: &mut Board, possibles: &mut Vec<Vec<Vec<u8>>>, remain_index: &mut Vec<(usize, usize)>) -> bool {
 
-    // while !remain_index.is_empty() {
-        remain_index.sort_by(|a, b| possibles[b.0][b.1].len().cmp(&possibles[a.0][a.1].len()));
-        println!("{:?}", possibles);
-        println!("{:?}", remain_index);
-        // split remain_index to remain_index (len > 1), one_index (len == 1)
-        let idx = remain_index.partition_point(|n| possibles[n.0][n.1].len() != 1);
-        let one_index = remain_index.split_off(idx);
-        // update determined numbers
-        for &(i, j) in one_index.iter() {
-            board[i][j] = possibles[i][j].pop().unwrap();
-            println!("changed {} {}", i, j);
+    remain_index.sort_by(|a, b| possibles[b.0][b.1].len().cmp(&possibles[a.0][a.1].len()));
+    println!("{:?}", remain_index);
+
+    // split remain_index to remain_index (len > 1), one_index (len == 1 or 0)
+    let idx = remain_index.partition_point(|n| possibles[n.0][n.1].len() > 1);
+    let one_index = remain_index.split_off(idx);
+
+    // update determined numbers (len == 1 or 0)
+    for &(i, j) in one_index.iter() {
+        match possibles[i][j].pop() {
+            None => return false,
+            Some(n) => {
+                board[i][j] = n;
+                println!("changed (i, j) = ({}, {}), n = {}", i, j, n);
+                print_board(*board);
+
+                for k in 0..9 {
+                    possibles[k][j].retain(|&v| v != n);
+                    possibles[i][k].retain(|&v| v != n);
+                    possibles[(i/3)*3+k/3][(j/3)*3+k%3].retain(|&v| v != n);
+                }
+            }
         }
+    };
 
+    // do kari-oki for remain_index (len > 1)
+    match remain_index.pop() {
+        None => return true,
+        Some(last) => {
+            // let elements = possibles[last.0][last.1].clone();
+            for &kari in possibles[last.0][last.1].iter() {
+                let mut board2 = board.clone();
+                let mut possibles2 = possibles.clone();
+                let mut remain_index2 = remain_index.clone();
+                board2[last.0][last.1] = kari;
+                println!("karioki: {:?}, {:?}", last, kari);
 
-        println!("{:?}", remain_index);
+                // update possibles
+                for i in 0..9 {
+                    possibles2[i][last.1].retain(|&v| v != kari);
+                    possibles2[last.0][i].retain(|&v| v != kari);
+                    possibles2[((last.0)/3)*3+i/3][((last.1)/3)*3+i%3].retain(|&v| v != kari);
+                };
 
-    board
+                if solve(&mut board2, &mut possibles2, &mut remain_index2) {
+                    *board = board2;
+                    return true;
+                };
+            };
+        }
+    };
+    false
 }

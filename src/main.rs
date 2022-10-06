@@ -11,12 +11,18 @@ fn main() {
         process::exit(1);
     });
 
-    let mut input = get_input(config);
+    let mut board = get_input(config);
 
     println!("init:");
-    print_board(input);
+    print_board(board);
 
-    let solved = solve(&mut input);
-    println!("solved:");
-    print_board(*solved);
+    let (mut possibles, mut remain_index) = possibles(&board);
+    if solve(&mut board, &mut possibles, &mut remain_index) {
+        println!("solved:");
+        print_board(board);
+    } else {
+        println!("Failed to solve");
+        print_board(board);
+        process::exit(1);
+    };
 }
