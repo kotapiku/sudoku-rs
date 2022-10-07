@@ -78,8 +78,7 @@ fn possibles(board: &Board) -> (Possibles, RemainIndex) {
     let mut possibles: Possibles = vec![vec![Vec::with_capacity(9); 9]; 9];
     for &(i, j) in remain_index.iter() {
         for k in 0..9 {
-            if possible_block[(i / 3) * 3 + j / 3][k] && possible_row[i][k] && possible_column[j][k]
-            {
+            if possible_block[(i / 3) * 3 + j / 3][k] & possible_row[i][k] & possible_column[j][k] {
                 possibles[i][j].push((k + 1).try_into().unwrap());
             }
         }
@@ -125,7 +124,7 @@ fn solve2(board: &mut Board, possibles: &mut Possibles, remain_index: &mut Remai
                 for i in 0..9 {
                     possibles2[i][last.1].retain(|&v| v != kari);
                     possibles2[last.0][i].retain(|&v| v != kari);
-                    possibles2[((last.0) / 3) * 3 + i / 3][((last.1) / 3) * 3 + i % 3]
+                    possibles2[(last.0 / 3) * 3 + i / 3][(last.1 / 3) * 3 + i % 3]
                         .retain(|&v| v != kari);
                 }
 
